@@ -16,7 +16,6 @@ public class AddressBookServiceTest {
     public void init() {
         System.out.println("Welcome to AddressBook Management Service");
     }
-
     @Test
     public void givenAddressBookDB_WhenRetrivedShouldMatchPersonCount() {
         AddressBookService addressBookService = new AddressBookService();
