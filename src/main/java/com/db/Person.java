@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 public class Person {
     // variable declaration
+    int id;
+    String firstName;
     String lastName;
     String address;
     String city;
@@ -29,8 +31,6 @@ public class Person {
         this.entryDate = entryDate;
     }
 
-    int id;
-    String firstName;
     public int getId() {
         return id;
     }
@@ -111,6 +111,11 @@ public class Person {
         this.entryDate = entryDate;
     }
 
-
-
+    //toString
+    @Override
+    public String toString() {
+        return "Person [lastName=" + lastName + ", address=" + address + ", city=" + city + ", state=" + state
+                + ", zip=" + zip + ", mobileNumber=" + mobileNumber + ", email=" + email + ", entryDate=" + entryDate
+                + ", id=" + id + ", firstName=" + firstName + "]";
+    }
 }
