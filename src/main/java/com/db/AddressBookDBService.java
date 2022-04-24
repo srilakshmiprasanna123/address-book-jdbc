@@ -1,5 +1,11 @@
 package com.db;
 
+/**
+ * @author : Ashvini Kanojia
+ * @Since :18-04-2022
+ * @purpose :Addressbook Jdbc
+ */
+
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -10,20 +16,19 @@ public class AddressBookDBService {
     private static AddressBookDBService addressBookDBService;
     private PreparedStatement addressBookDataStatement;
 
-    private AddressBookDBService() {
-
-    }
-
     public static AddressBookDBService getInstance() {
         if (addressBookDBService == null)
             addressBookDBService = new AddressBookDBService();
         return addressBookDBService;
     }
 
+    /*
+     *purpose:connectiong JDBC connection
+     * */
     private Connection getConnection() throws SQLException {
-        String jdbcURL = "jdbc:mysql://localhost:3306/addressbook_db?useSSL=false";
+        String jdbcURL = "jdbc:mysql://localhost:3306/addressbookservice?useSSL=false";
         String userName = "root";
-        String password = "root1999";
+        String password = "mysql123";
         Connection connection;
         System.out.println("Connecting to database:" + jdbcURL);
         connection = DriverManager.getConnection(jdbcURL, userName, password);
@@ -31,12 +36,15 @@ public class AddressBookDBService {
         return connection;
     }
 
-
+    /*
+     * Reading data from database
+     */
     public List<Person> readData() {
-        String query = "SELECT * from address_book;";
+        String query = "SELECT * from addressbook;";
         return this.getPersonDetailsFromDatabase(query);
     }
 
+    //getting person details form pojo class Person
     private List<Person> getPersonDetailsFromDatabase(String query) {
         List<Person> personList = new ArrayList<Person>();
         try (Connection connection = this.getConnection()) {
@@ -49,8 +57,8 @@ public class AddressBookDBService {
         return personList;
     }
 
-    private List<Person> getPersonData(ResultSet resultSet) {
 
+    private List<Person> getPersonData(ResultSet resultSet) {
         List<Person> personList = new ArrayList<>();
         try {
             while (resultSet.next()) {
@@ -73,13 +81,18 @@ public class AddressBookDBService {
 
     }
 
+    /*
+     * update conatcts in address book
+     */
     public int updateContactNumber(String firstName, String contactNumber) {
         return this.updateAddressBookDataUsingStatement(firstName, contactNumber);
 
     }
-
+    /*
+     * update mobileNo by their firstName
+     */
     private int updateAddressBookDataUsingStatement(String firstName, String mobileNumber) {
-        String sql = String.format("update address_book set mobileNumber = '%s' where firstName = '%s';", mobileNumber, firstName);
+        String sql = String.format("update addressbook set mobileNumber = '%s' where firstName = '%s';", mobileNumber, firstName);
         try (Connection connection = this.getConnection()) {
             Statement statement = connection.createStatement();
             return statement.executeUpdate(sql);
@@ -103,6 +116,7 @@ public class AddressBookDBService {
         return personList;
     }
 
+    //display first name of table
     private void prepareStatementForAddressBookData() {
         try {
             Connection connection = this.getConnection();
@@ -113,8 +127,9 @@ public class AddressBookDBService {
         }
     }
 
+    //display contact between given Range of data
     public List<Person> getAddressBookForDateRange(LocalDate startDate, LocalDate endDate) {
-        String sql = String.format("SELECT * FROM address_book WHERE entryDate BETWEEN '%s' AND '%s';",
+        String sql = String.format("SELECT * FROM addressbook WHERE entryDate BETWEEN '%s' AND '%s';",
                 Date.valueOf(startDate), Date.valueOf(endDate));
         return this.getAddressBookDataUsingDB(sql);
     }
@@ -131,13 +146,16 @@ public class AddressBookDBService {
         return addressBookList;
     }
 
+    //count people by their city
+    public List<Person> countPeopleFromGivenCity(String city) {
+        String sql = String.format("SELECT * FROM  addressbook WHERE city =  '%s';", city);
+        return this.getAddressBookDataUsingDB(sql);
+    }
+
     //main
     public static void main(String[] args) {
-
         AddressBookDBService addressBookDBService = new AddressBookDBService();
         List<Person> dataList = addressBookDBService.readData();
-        addressBookDBService.updateAddressBookDataUsingStatement("abc", "9999999999");
         System.out.println(dataList);
-
     }
 }
