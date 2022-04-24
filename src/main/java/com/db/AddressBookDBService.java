@@ -5,12 +5,14 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
- * purpose:Retirves all entries form database to java_File
- * */
 public class AddressBookDBService {
 
     private static AddressBookDBService addressBookDBService;
+    private PreparedStatement addressBookDataStatement;
+
+    private AddressBookDBService() {
+
+    }
 
     public static AddressBookDBService getInstance() {
         if (addressBookDBService == null)
@@ -18,15 +20,8 @@ public class AddressBookDBService {
         return addressBookDBService;
     }
 
-    private AddressBookDBService() {
-
-    }
-
-    /*
-     * purpose: connect JDBC connection used:Driver manager class
-     */
     private Connection getConnection() throws SQLException {
-        String jdbcURL = "jdbc:mysql://localhost:3306/addressbook_db";
+        String jdbcURL = "jdbc:mysql://localhost:3306/addressbook_db?useSSL=false";
         String userName = "root";
         String password = "root1999";
         Connection connection;
@@ -36,17 +31,12 @@ public class AddressBookDBService {
         return connection;
     }
 
-    /*
-     * read data from database
-     */
+
     public List<Person> readData() {
         String query = "SELECT * from address_book;";
         return this.getPersonDetailsFromDatabase(query);
     }
 
-    /*
-     * getting PersonDetails form Pojo class Person
-     */
     private List<Person> getPersonDetailsFromDatabase(String query) {
         List<Person> personList = new ArrayList<Person>();
         try (Connection connection = this.getConnection()) {
@@ -57,29 +47,6 @@ public class AddressBookDBService {
             e.printStackTrace();
         }
         return personList;
-    }
-
-    /*
-     * update details of address book by their name
-     * */
-    public int updateContactNumber(String firstName, String contactNumber) {
-        return this.updateAddressBookDataUsingStatement(firstName, contactNumber);
-    }
-
-    /*
-     * update details of address book by their name
-     * update phoneNo of name "pranav"
-     * */
-
-    private int updateAddressBookDataUsingStatement(String firstName, String mobileNumber) {
-        String sql = String.format("update address_book set mobileNumber = '%s' where firstName = '%s';", mobileNumber, firstName);
-        try (Connection connection = this.getConnection()) {
-            Statement statement = connection.createStatement();
-            return statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 
     private List<Person> getPersonData(ResultSet resultSet) {
@@ -96,13 +63,72 @@ public class AddressBookDBService {
                 String zip = resultSet.getString("zip");
                 String mobileNumber = resultSet.getString("mobileNumber");
                 String email = resultSet.getString("email");
-                personList.add(new Person(id, firstName, lastName, address, city, state, zip, mobileNumber, email));
+                LocalDate entryDate = resultSet.getDate("entryDate").toLocalDate();
+                personList.add(new Person(id,firstName,lastName,address,city,state,zip,mobileNumber,email,entryDate));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return personList;
 
+    }
+
+    public int updateContactNumber(String firstName, String contactNumber) {
+        return this.updateAddressBookDataUsingStatement(firstName, contactNumber);
+
+    }
+
+    private int updateAddressBookDataUsingStatement(String firstName, String mobileNumber) {
+        String sql = String.format("update address_book set mobileNumber = '%s' where firstName = '%s';", mobileNumber, firstName);
+        try (Connection connection = this.getConnection()) {
+            Statement statement = connection.createStatement();
+            return statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Person> getaddressBookData(String firstName) {
+        List<Person> personList = null;
+        if (this.addressBookDataStatement == null)
+            this.prepareStatementForAddressBookData();
+        try {
+            addressBookDataStatement.setString(1, firstName);
+            ResultSet resultSet = addressBookDataStatement.executeQuery();
+            personList = this.getPersonData(resultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return personList;
+    }
+
+    private void prepareStatementForAddressBookData() {
+        try {
+            Connection connection = this.getConnection();
+            String sql = "SELECT * FROM addressbook WHERE firstName = ?";
+            addressBookDataStatement = connection.prepareStatement(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Person> getAddressBookForDateRange(LocalDate startDate, LocalDate endDate) {
+        String sql = String.format("SELECT * FROM address_book WHERE entryDate BETWEEN '%s' AND '%s';",
+                Date.valueOf(startDate), Date.valueOf(endDate));
+        return this.getAddressBookDataUsingDB(sql);
+    }
+
+    private List<Person> getAddressBookDataUsingDB(String sql) {
+        List<Person> addressBookList = new ArrayList<>();
+        try (Connection connection = this.getConnection()) {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql);
+            addressBookList = this.getPersonData(resultSet);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return addressBookList;
     }
 
     //main
@@ -112,5 +138,6 @@ public class AddressBookDBService {
         List<Person> dataList = addressBookDBService.readData();
         addressBookDBService.updateAddressBookDataUsingStatement("abc", "9999999999");
         System.out.println(dataList);
+
     }
 }
